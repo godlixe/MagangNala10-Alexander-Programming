@@ -9,11 +9,18 @@
 using namespace std;
 using namespace cv;
 
+bool compareContourAreas (vector<Point> contour1, vector<Point> contour2 ) {
+    double i = fabs( contourArea(cv::Mat(contour1)) );
+    double j = fabs( contourArea(cv::Mat(contour2)) );
+    return ( i < j );
+}
+
 Scalar greenLow = Scalar(40, 40, 40);
 Scalar greenHigh = Scalar(70, 255, 255);
 int main()
 {
 
+    
     Mat frame, fullImageHSV, fullImageHSV2, frame_threshold, frame_threshold2, mask;
     VideoCapture cap(-1);
     namedWindow("My Window", WINDOW_NORMAL);
@@ -43,21 +50,19 @@ int main()
             vector <vector<Point>> contours;
             findContours(frame_threshold, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
             //drawContours(frame_threshold, contours, 1, (0,255,0), 3);
-            for (size_t i = 0; i < contours.size(); i++){
-                Rect boundRect = boundingRect(contours[i]);
+            sort(contours.begin(), contours.end(), compareContourAreas);
+                Rect boundRect = boundingRect(contours[contours.size()-1]);
                 if(boundRect.area()>350 && (boundRect.width < 70|| boundRect.height<70)){
                     rectangle(frame, boundRect.tl(), boundRect.br(), (0,0,255), 2);
                 }
-            }
             vector <vector<Point>> contours2;
             findContours(frame_threshold2, contours2, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
             //drawContours(frame_threshold, contours, 1, (0,255,0), 3);
-            for (size_t i = 0; i < contours2.size(); i++){
-                Rect boundRect = boundingRect(contours2[i]);
-                if(boundRect.area()>350 && (boundRect.width < 70|| boundRect.height<70)){
-                    rectangle(frame, boundRect.tl(), boundRect.br(), (255,0,0), 2);
+            sort(contours2.begin(), contours2.end(), compareContourAreas);
+                Rect boundRect2 = boundingRect(contours2[contours2.size()-1]);
+                if(boundRect2.area()>350 && (boundRect2.width < 70|| boundRect2.height<70)){
+                    rectangle(frame, boundRect2.tl(), boundRect2.br(), (255,0,0), 2);
                 }
-            }
             //imshow("My Window", frame);
             imshow("My Window", frame);
             if( waitKey(10) >=0 ) break;
