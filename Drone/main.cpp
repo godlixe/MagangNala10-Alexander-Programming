@@ -45,12 +45,15 @@ int main()
             erode(mask, mask2, elementKernel, Point(-1,-1),1);
             dilate(mask2, frame_threshold, elementKernel, Point(-1,-1),1);
             
+            cout << frame.size().width << endl;
+            cout << frame.size().height << endl;
 
             vector <vector<Point>> contours;
             findContours(frame_threshold, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+            if(contours.size()!=0){
             sort(contours.begin(), contours.end(), compareContourAreas);
                 Rect b = boundingRect(contours[contours.size()-1]);
-                if(b.area()>1000 && (b.width < 70|| b.height<70)){
+                if(b.area()>1000){
                     rectangle(frame, b.tl(), b.br(), (0,0,255), 2);
                     if(b.x < x && b.x + b.width > x){
                         if(b.y < y && b.y + b.height > y){
@@ -69,6 +72,7 @@ int main()
                     putText(frame, str, Point2f(100,50), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
                     putText(frame, str2, Point2f(100,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
                 }
+            }
             //imshow("My Window", frame);
             imshow("My Window", frame);
             imshow("My Window2", frame_threshold);
