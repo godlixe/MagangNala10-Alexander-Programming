@@ -21,9 +21,8 @@ int err = 0;
 int main()
 {
 
-    
+    int ero = 0, dil = 0;
     Mat frame, fullImageHSV, fullImageHSV2, mask, mask2, frame_threshold, frame_threshold2;
-    Mat elementKernel = getStructuringElement(MORPH_RECT, Size(10,10), Point(-1,-1));
     VideoCapture cap(-1);
     namedWindow("My Window", WINDOW_NORMAL);
 
@@ -31,6 +30,8 @@ int main()
     createTrackbar("Green_LH", "My Window", &glh, uh);
     createTrackbar("Green_LS", "My Window", &gls, us);
     createTrackbar("Green_LV", "My Window", &glv, uv);
+    createTrackbar("ERO", "My Window", &ero, 10);
+    createTrackbar("DIL", "My Window", &dil, 10);
 
     if(!cap.open(0))
         return 0;
@@ -42,11 +43,11 @@ int main()
             inRange(fullImageHSV, Scalar(glh, gls, glv), Scalar(uh, us, uv), mask);
             //cvtColor(frame, frame, COLOR_BGR2HSV);
             //inRange(frame, greenLow, greenHigh, mask);
-            erode(mask, mask2, elementKernel, Point(-1,-1),1);
-            dilate(mask2, frame_threshold, elementKernel, Point(-1,-1),1);
+            Mat elementKernel = getStructuringElement(MORPH_RECT, Size(ero+1, ero+1), Point(ero,ero));
+            Mat elementKernel2 = getStructuringElement(MORPH_RECT, Size(dil+1, dil+1), Point(dil,dil));
+            erode(mask, frame_threshold, elementKernel, Point(-1,-1),1);
+            dilate(mask, frame_threshold, elementKernel2, Point(-1,-1),1);
             
-            cout << frame.size().width << endl;
-            cout << frame.size().height << endl;
 
             vector <vector<Point>> contours;
             findContours(frame_threshold, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
