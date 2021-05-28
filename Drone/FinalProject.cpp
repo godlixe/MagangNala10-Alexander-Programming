@@ -29,16 +29,9 @@ Rect mb, hb; //Rectangle outer & inner
 int r = 20;
 
 /* PID */
-int kp, ki, kd;
-int err_au, err_ad, err_al, err_ar;
-int err_u[3]={0}, err_d[3]={0}, err_l[3]={0}, err_r[3]={0};
-
-void swap(int *a, int *b){
-    int temp;
-    temp = *a;
-    *a = *b;
-    *b = temp;
-}
+int err_kiri[3], err_kanan[3];
+int e_accum_kiri = 0, e_accum_kanan = 0;
+int output;
 
 int sumAv(int arr[]){
     int sum;
@@ -71,9 +64,10 @@ int main()
     createTrackbar("V_Hijau", "My Window", &rlv, uv);
 
     //Trackbar PID
-    createTrackbar("P", "Trackbar PID", &kp, 10);
-    createTrackbar("I", "Trackbar PID", &ki, 10);
-    createTrackbar("D", "Trackbar PID", &kd, 10);
+    int Kp = 0, Ki = 0, Kd = 0;
+    createTrackbar("P", "Trackbar PID", &Kp, 50);
+    createTrackbar("I", "Trackbar PID", &Ki, 50);
+    createTrackbar("D", "Trackbar PID", &Kd, 50);
 
     if(!cap.open(0))
         return 0;
@@ -149,7 +143,16 @@ int main()
                 kiri = 0;
                 kanan = 0;
             }
-
+            if(kiri){
+                inputError(err_kiri, kiri);
+                e_accum_kiri = sumAv(err_kiri);
+                kiri = Kp*err_kiri[0] + Ki*e_accum_kiri + Kd*err_kiri[1];
+            }
+            else if(kanan){
+                inputError(err_kanan, kanan);
+                e_accum_kanan = sumAv(err_kanan);
+                kanan = Kp*err_kanan[0] + Ki*e_accum_kanan + Kd*err_kanan[1];
+            }
             char left[200];
             char right[200];
             sprintf(left, "kiri  = %d", kiri);
