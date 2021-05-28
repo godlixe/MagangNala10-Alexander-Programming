@@ -20,16 +20,16 @@ bool compareContourAreas (vector<Point> contour1, vector<Point> contour2 ) {
 /* Variabel koordinat dan object setpoint */
 int x = 640/2; //x titik pusat
 int y = 480/2; //y titik pusat
-int ox1 = 0, ox2 = 0, oy1 = 0, oy2 = 0; //x dan y objek luar
-int ix1 = 0, ix2 = 0, iy1 = 0, iy2 = 0; //x dan y objek dalam
+int mx1 = 0, mx2 = 0, my1 = 0, my2 = 0, pmx = 0, pmy = 0; //x dan y bola merah
+int hx1 = 0, hx2 = 0, hy1 = 0, hy2 = 0, phx = 0, phy = 0; //x dan y objek dalam
 int xp = 0, yp = 0;
-int errh = 0, errv = 0;   //error horizontal dan vertikal
-int l = 0, d = 0, r = 0, u = 0;
+int kiri = 0, kanan = 0, lurus = 0;
 bool s;
-Rect ob, ib; //Rectangle outer & inner
+Rect mb, hb; //Rectangle outer & inner
+int r = 20;
 
 /* PID */
-double kp, ki, kd;
+int kp, ki, kd;
 int err_au, err_ad, err_al, err_ar;
 int err_u[3]={0}, err_d[3]={0}, err_l[3]={0}, err_r[3]={0};
 
@@ -47,22 +47,11 @@ int sumAv(int arr[]){
 }
 
 void inputError(int *arr, int value){
-    if(!arr[0]&&!arr[1]&&!arr[2]){
-        arr[0]=value;
-        arr[1]=value;
-        arr[2]=value;
-    }
-    else if(!arr[1]&&!arr[2]){
-        arr[1]=value;
-        arr[2]=value;
-    }
-    else if(!arr[2]){
-        arr[2]=value;
-    }
     arr[2] = arr[1];
     arr[1] = arr[0];
     arr[0] = value;
 }
+
 int main()
 {
 
@@ -70,15 +59,21 @@ int main()
     Mat frame, fullImageHSV, fullImageHSV2, mask, mask2, frame_threshold, frame_threshold2;
     VideoCapture cap(-1);
     namedWindow("My Window", WINDOW_NORMAL);
+    namedWindow("Trackbar PID", WINDOW_NORMAL);
 
-    //Variabel trackbar & trackbar
+    //Trackbar HSV
     int glh=0, gls=0, glv=0, rlh=0, rls=0, rlv=0, uh=180, us=255, uv=255;
-    createTrackbar("Outer_LH", "My Window", &glh, uh);
-    createTrackbar("Outer_LS", "My Window", &gls, us);
-    createTrackbar("Outer_LV", "My Window", &glv, uv);
-    createTrackbar("Inner_LH", "My Window", &rlh, uh);
-    createTrackbar("Inner_LS", "My Window", &rls, us);
-    createTrackbar("Inner_LV", "My Window", &rlv, uv);
+    createTrackbar("H_Merah", "My Window", &glh, uh);
+    createTrackbar("S_Merah", "My Window", &gls, us);
+    createTrackbar("V_Merah", "My Window", &glv, uv);
+    createTrackbar("H_Hijau", "My Window", &rlh, uh);
+    createTrackbar("S_Hijau", "My Window", &rls, us);
+    createTrackbar("V_Hijau", "My Window", &rlv, uv);
+
+    //Trackbar PID
+    createTrackbar("P", "Trackbar PID", &kp, 10);
+    createTrackbar("I", "Trackbar PID", &ki, 10);
+    createTrackbar("D", "Trackbar PID", &kd, 10);
 
     if(!cap.open(0))
         return 0;
@@ -108,91 +103,64 @@ int main()
             findContours(frame_threshold, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
             if(contours.size()!=0){
             sort(contours.begin(), contours.end(), compareContourAreas);
-                Rect ob = boundingRect(contours[contours.size()-1]);
-                ox1 = ob.x;
-                ox2 = ob.x + ob.width;
-                oy1 = ob.y;
-                oy2 = ob.y + ob.height;
+                Rect mb = boundingRect(contours[contours.size()-1]);
+                rectangle(frame, mb.tl(), mb.br(), Scalar(255,0,0), 3);
+                mx1 = mb.x;
+                mx2 = mb.x + mb.width;
+                my1 = mb.y;
+                my2 = mb.y + mb.height;
+                pmx = (mx1+mx2)/2;
+                pmy = (my1+my2)/2;
             }
 
             vector <vector<Point>> contours2;
             findContours(frame_threshold2, contours2, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-            for (size_t i = 0; i < contours2.size(); i++){
-                Rect ib = boundingRect(contours2[i]);
-                if(ib.area() > 1000){
-                    ix1 = ib.x;
-                    ix2 = ib.x + ib.width;
-                    iy1 = ib.y;
-                    iy2 = ib.y + ib.height;
-                    if(ix1 > ox1 && ix2 < ox2){
-                        if(iy1 > oy1 && iy2 < oy2){
-                            rectangle(frame, ib.tl(), ib.br(), (0,0,255), 2);
-                            s = 1;
-                            xp = (ix1 + ix2)/2;
-                            yp = (iy1 + iy2)/2;
-                        }
-                    }
-                }
+            if(contours2.size()!=0){
+            sort(contours2.begin(), contours2.end(), compareContourAreas);
+                Rect hb = boundingRect(contours2[contours2.size()-1]);
+                rectangle(frame, hb.tl(), hb.br(), Scalar(255,0,0), 3);
+                    hx1 = hb.x;
+                    hx2 = hb.x + hb.width;
+                    hy1 = hb.y;
+                    hy2 = hb.y + hb.height;
+                    phx = (hx1+hx2)/2;
+                    phy = (hy1+hy2)/2;
             }
-            if((ix1 < x && ix2 > x)&&(iy1 < y && iy2 > y)){
-                    u = 0;
-                    d = 0;
-                    l = 0;
-                    r = 0;
+            //Gambar
+            Rect setpoint(220, 190, 200, 100);
+            rectangle(frame, setpoint, Scalar(255, 255, 255), 3);
+            circle(frame, Point(110, 240), r, Scalar(0, 0, 255), -1);
+            circle(frame, Point(530, 240), r, Scalar(0, 255, 0), -1);
+            
+            kiri = 0;
+            kanan = 0;
+            lurus = 0;
+
+            if(pmx+r > 220 && pmx+r < 420 && pmy > 190 && pmy < 290){
+                kiri = 110 - pmx + r;
+                kanan = 0;
+            }
+            else if(phx-r > 220 && phx-r < 420 && phy > 190 && phy < 290){
+                kanan = 530 - phx - r;
+                kiri = 0;
             }
             else{
-                if(xp < x){
-                    l = xp-x;
-                    if(y > iy1 && y < iy2){
-                        u = 0;
-                        d = 0;
-                    }
-                    r = 0;
-                }
-                if(xp > x){
-                    r = xp-x;
-                    if(y > iy1 && y < iy2){
-                        u = 0;
-                        d = 0;
-                    }
-                    l = 0;
-                }
-                if(yp > y){
-                    d = yp-y;
-                    if(x > ix1 && x < ix2){
-                        l = 0;
-                        r = 0;
-                    }
-                    u = 0;
-                }
-                if(yp < y){
-                    u = yp-y;
-                    if(x > ix1 && x < ix2){
-                        l = 0;
-                        r = 0;
-                    }
-                    d = 0;
-                }
+                lurus = 1;
+                kiri = 0;
+                kanan = 0;
             }
-            //inputError(err_u, u);
-            //u = sumAv(err_u);
 
-            //Fungsi printing
-            char up[200];
-            char down[200];
             char left[200];
             char right[200];
-            char kor[200];
-            sprintf(up,"UP     = %d", abs(u));
-            sprintf(down,"DOWN  = %d", abs(d));
-            sprintf(left,"LEFT   = %d", abs(l));
-            sprintf(right,"RIGHT  = %d", abs(r));
-            sprintf(kor,"xp, yp  = %d, %d", xp, yp);
-            putText(frame, up, Point2f(15,50), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
-            putText(frame, down, Point2f(15,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
-            putText(frame, left, Point2f(15,150), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
-            putText(frame, right, Point2f(15,200), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
-            putText(frame, kor, Point2f(15,250), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+            sprintf(left, "kiri  = %d", kiri);
+            sprintf(right, "kanan = %d", kanan);
+            if(kiri)
+                putText(frame, left, Point2f(15,50), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+            else if(kanan)
+                putText(frame, right, Point2f(15,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+            else{
+                putText(frame, "lurus", Point2f(15,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+            }
 
             //Output
             imshow("My Window", frame);
