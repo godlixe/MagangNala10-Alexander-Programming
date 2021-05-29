@@ -21,11 +21,10 @@ bool compareContourAreas (vector<Point> contour1, vector<Point> contour2 ) {
 int x = 640/2; //x titik pusat
 int y = 480/2; //y titik pusat
 int mx1 = 0, mx2 = 0, my1 = 0, my2 = 0, pmx = 0, pmy = 0; //x dan y bola merah
-int hx1 = 0, hx2 = 0, hy1 = 0, hy2 = 0, phx = 0, phy = 0; //x dan y objek dalam
-int xp = 0, yp = 0;
-int kiri = 0, kanan = 0, lurus = 0;
+int hx1 = 0, hx2 = 0, hy1 = 0, hy2 = 0, phx = 0, phy = 0; //x dan y bola hijau
+int kiri = 0, kanan = 0, lurus = 0; //variabel error
 bool s;
-Rect mb, hb; //Rectangle outer & inner
+Rect mb, hb; //bounding box merah dan hijau;
 int r = 20;
 
 /* PID */
@@ -131,12 +130,12 @@ int main()
             lurus = 0;
 
             if(pmx+r > 220 && pmx+r < 420 && pmy > 190 && pmy < 290){
-                kiri = 110 - pmx + (mx2-mx1)/2;
-                kanan = 0;
+                kanan = pmx + (mx2-mx1)/2 - 110;
+                kiri = 0;
             }
             else if(phx-r > 220 && phx-r < 420 && phy > 190 && phy < 290){
-                kanan = 530 - phx - (hx2-hx1)/2;
-                kiri = 0;
+                kiri = phx - (hx2-hx1)/2 - 530;
+                kanan = 0;
             }
             else{
                 lurus = 1;
