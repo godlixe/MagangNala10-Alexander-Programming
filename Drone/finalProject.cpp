@@ -131,11 +131,11 @@ int main()
             lurus = 0;
 
             if(pmx+r > 220 && pmx+r < 420 && pmy > 190 && pmy < 290){
-                kiri = 110 - pmx + r;
+                kiri = 110 - pmx + (mx2-mx1)/2;
                 kanan = 0;
             }
             else if(phx-r > 220 && phx-r < 420 && phy > 190 && phy < 290){
-                kanan = 530 - phx - r;
+                kanan = 530 - phx - (hx2-hx1)/2;
                 kiri = 0;
             }
             else{
@@ -157,14 +157,18 @@ int main()
             char right[200];
             sprintf(left, "kiri  = %d", kiri);
             sprintf(right, "kanan = %d", kanan);
-            if(kiri)
+            if(kiri){
                 putText(frame, left, Point2f(15,50), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
-            else if(kanan)
+                cout << kiri << endl;
+            }
+            else if(kanan){
                 putText(frame, right, Point2f(15,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+                cout << kanan << endl;
+            }
             else{
                 putText(frame, "lurus", Point2f(15,100), FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+                cout << "0" << endl;
             }
-
             //Output
             imshow("My Window", frame);
             imshow("My Window2", frame_threshold);
