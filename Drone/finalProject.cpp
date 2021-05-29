@@ -31,7 +31,7 @@ int r = 20;
 /* PID */
 int err_kiri[3], err_kanan[3];
 int e_accum_kiri = 0, e_accum_kanan = 0;
-int output;
+int derivative;
 
 int sumAv(int arr[]){
     int sum;
@@ -146,12 +146,14 @@ int main()
             if(kiri){
                 inputError(err_kiri, kiri);
                 e_accum_kiri = sumAv(err_kiri);
-                kiri = Kp*err_kiri[0] + Ki*e_accum_kiri + Kd*err_kiri[1];
+                derivative = err_kiri[0] - err_kiri[1];
+                kiri = Kp*err_kiri[0] + Ki*e_accum_kiri + Kd*derivative;
             }
             else if(kanan){
                 inputError(err_kanan, kanan);
                 e_accum_kanan = sumAv(err_kanan);
-                kanan = Kp*err_kanan[0] + Ki*e_accum_kanan + Kd*err_kanan[1];
+                derivative = err_kanan[0] - err_kanan[1];
+                kanan = Kp*err_kanan[0] + Ki*e_accum_kanan + Kd*derivative;
             }
             char left[200];
             char right[200];
